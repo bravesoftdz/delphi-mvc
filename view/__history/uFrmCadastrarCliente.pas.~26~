@@ -1,0 +1,355 @@
+unit uFrmCadastrarCliente;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls, Data.DB,
+  Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls, Cliente.controller, Cliente.model,
+  Cliente.dao;
+
+type
+  TOperacao = (opNovo, opAlterar, opNavegar);
+  TFrmCadastrarCliente = class(TForm)
+    pnlRodape: TPanel;
+    btnFechar: TButton;
+    pgcPrincipal: TPageControl;
+    tbPesquisa: TTabSheet;
+    tbDados: TTabSheet;
+    pnlFiltro: TPanel;
+    btnPesquisar: TButton;
+    edtPesquisar: TLabeledEdit;
+    DBGrid1: TDBGrid;
+    dsPesquisar: TDataSource;
+    edtCodigo: TLabeledEdit;
+    edtNome: TLabeledEdit;
+    edtDocumento: TLabeledEdit;
+    cbxTipo: TComboBox;
+    edtTelefone: TLabeledEdit;
+    lblTipo: TLabel;
+    pnlBtnsPesquisar: TPanel;
+    btnNovo: TButton;
+    btnDetalhar: TButton;
+    BtnExcluir: TButton;
+    pnlBtnsCadastro: TPanel;
+    btnListar: TButton;
+    btnAlterar: TButton;
+    btnGravar: TButton;
+    btnCancelar: TButton;
+    procedure FormKeyPress(Sender: TObject; var Key: Char);
+    procedure btnFecharClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure btnPesquisarClick(Sender: TObject);
+    procedure btnNovoClick(Sender: TObject);
+    procedure btnDetalharClick(Sender: TObject);
+    procedure BtnExcluirClick(Sender: TObject);
+    procedure btnListarClick(Sender: TObject);
+    procedure btnAlterarClick(Sender: TObject);
+    procedure btnGravarClick(Sender: TObject);
+    procedure btnCancelarClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+  private
+    FOperacao : TOperacao;
+    procedure Novo;
+    procedure Detalhar;
+    procedure Excluir;
+    procedure Configuracoes;
+    procedure Pesquisar;
+    procedure CarregarCliente;
+    procedure Listar;
+    procedure Alterar;
+    procedure Inserir;
+    procedure Gravar;
+    procedure HabilitarControles(aOperacao: TOperacao);
+  public
+
+  end;
+
+var
+  FrmCadastrarCliente: TFrmCadastrarCliente;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFrmCadastrarCliente.Alterar;
+var
+  oCliente: TCliente;
+  oClienteController: TClienteController;
+  sErro: string;
+begin
+  oCliente := TCliente.Create;
+  oClienteController := TClienteController.Create;
+  try
+    with oCliente do
+    begin
+       ID := StrToIntDef(edtCodigo.Text, 0);
+       Nome := edtNome.Text;
+
+       if cbxTipo.ItemIndex = 0 then
+          Tipo := 'F'
+       else
+       if cbxTipo.ItemIndex = 1 then
+          Tipo := 'J'
+       else
+          Tipo := EmptyStr;
+
+       Documento := edtDocumento.Text;
+       Telefone := edtTelefone.Text;
+    end;
+
+    if oClienteController.Alterar(oCliente, sErro) = False then
+       raise Exception.Create(sErro);
+
+  finally
+    FreeAndNil(oCliente);
+    FreeAndNil(oClienteController);
+  end;
+
+end;
+
+procedure TFrmCadastrarCliente.btnAlterarClick(Sender: TObject);
+begin
+   FOperacao := opAlterar;
+   HabilitarControles(opAlterar);
+end;
+
+procedure TFrmCadastrarCliente.btnCancelarClick(Sender: TObject);
+begin
+  HabilitarControles(opNavegar);
+end;
+
+procedure TFrmCadastrarCliente.btnDetalharClick(Sender: TObject);
+begin
+   Detalhar;
+end;
+
+procedure TFrmCadastrarCliente.BtnExcluirClick(Sender: TObject);
+begin
+   Excluir;
+end;
+
+procedure TFrmCadastrarCliente.btnFecharClick(Sender: TObject);
+begin
+    Close;
+end;
+
+procedure TFrmCadastrarCliente.btnGravarClick(Sender: TObject);
+begin
+   Gravar;
+   HabilitarControles(opNavegar);
+end;
+
+procedure TFrmCadastrarCliente.btnListarClick(Sender: TObject);
+begin
+   Listar;
+end;
+
+procedure TFrmCadastrarCliente.btnNovoClick(Sender: TObject);
+begin
+   Novo;
+   HabilitarControles(opNovo);
+end;
+
+procedure TFrmCadastrarCliente.btnPesquisarClick(Sender: TObject);
+begin
+   Pesquisar;
+end;
+
+procedure TFrmCadastrarCliente.CarregarCliente;
+var
+   oCliente: TCliente;
+   oClienteController: TClienteController;
+begin
+   oCliente := TCliente.Create;
+   oClienteController := TClienteController.Create;
+   try
+     oClienteController.CarregarCliente(oCliente, dsPesquisar.DataSet.FieldByName('id').AsInteger);
+     edtCodigo.Text    := IntToStr(oCliente.ID);
+     edtNome.Text      := oCliente.Nome;
+     if oCliente.Tipo = 'F' then
+        cbxTipo.ItemIndex  := 0
+     else
+     if oCliente.Tipo = 'J' then
+        cbxTipo.ItemIndex := 1
+     else
+        cbxTipo.ItemIndex := -1;
+
+     cbxTipo.Text      := oCliente.Tipo;
+     edtDocumento.Text := oCliente.Documento;
+     edtTelefone.Text  := oCliente.Telefone;
+   finally
+     FreeAndNil(oCliente);
+     FreeAndNil(oClienteController);
+   end;
+
+end;
+
+procedure TFrmCadastrarCliente.Configuracoes;
+begin
+   tbPesquisa.TabVisible := False;
+   tbDados.TabVisible := False;
+   pgcPrincipal.ActivePage := tbPesquisa;
+end;
+
+procedure TFrmCadastrarCliente.Detalhar;
+begin
+   FOperacao := opNavegar;
+   pgcPrincipal.ActivePage := tbDados;
+end;
+
+procedure TFrmCadastrarCliente.Excluir;
+var
+  oClienteController: TClienteController;
+  sErro: string;
+begin
+  oClienteController := TClienteController.Create;
+  try
+     if (DmCliente.cdsPesquisar.Active) and (DmCliente.cdsPesquisar.RecordCount > 0) then
+     begin
+        if MessageDlg('Deseja realmente excluir esse cliente',mtConfirmation,[mbYes, mbNo], 0) = IDYES then
+        begin
+          if oClienteController.Excluir(DmCliente.cdsPesquisarID.AsInteger, sErro) = False then
+             raise Exception.Create(sErro);
+
+          oClienteController.Pesquisar(edtPesquisar.Text);
+        end;
+
+
+     end
+     else
+        raise Exception.Create('Não há registro para ser excluído');
+
+  finally
+     FreeAndNil(oClienteController);
+  end;
+
+end;
+
+procedure TFrmCadastrarCliente.FormCreate(Sender: TObject);
+begin
+   DmCliente := TDmCliente.Create(nil);
+end;
+
+procedure TFrmCadastrarCliente.FormKeyPress(Sender: TObject; var Key: Char);
+begin
+    if Key = #13 then
+    begin
+      Key := #0;
+      Perform(WM_NEXTDLGCTL, 0, 0);
+    end;
+end;
+
+procedure TFrmCadastrarCliente.FormShow(Sender: TObject);
+begin
+   Configuracoes;
+end;
+
+procedure TFrmCadastrarCliente.Gravar;
+var
+ oClienteController: TClienteController;
+begin
+  oClienteController := TClienteController.Create;
+  try
+     case FOperacao of
+       opNovo: Inserir;
+       opAlterar: Alterar;
+     end;
+     oClienteController.Pesquisar(edtPesquisar.Text);
+  finally
+     FreeAndNil(oClienteController);
+  end;
+
+end;
+
+procedure TFrmCadastrarCliente.HabilitarControles(aOperacao: TOperacao);
+begin
+  case aOperacao of
+    opNovo, opAlterar:
+    begin
+       edtNome.Enabled := True;
+       cbxTipo.Enabled := True;
+       edtDocumento.Enabled := True;
+       edtTelefone.Enabled := True;
+       btnListar.Enabled := False;
+       btnFechar.Enabled := False;
+       btnAlterar.Enabled := False;
+       btnGravar.Enabled := True;
+       btnCancelar.Enabled := True;
+    end;
+    opNavegar:
+    begin
+       edtNome.Enabled := False;
+       cbxTipo.Enabled := False;
+       edtDocumento.Enabled := False;
+       edtTelefone.Enabled := False;
+       btnListar.Enabled := True;
+       btnFechar.Enabled := True;
+       btnAlterar.Enabled := True;
+       btnGravar.Enabled := False;
+       btnCancelar.Enabled := False;
+    end;
+  end;
+end;
+
+procedure TFrmCadastrarCliente.Inserir;
+var
+   oCliente: TCliente;
+   oClienteController: TClienteController;
+   sErro: string;
+begin
+   oCliente := TCliente.Create;
+   oClienteController := TClienteController.Create;
+   try
+      with oCliente do
+      begin
+         ID := 0;
+         Nome := edtNome.Text;
+
+         if cbxTipo.ItemIndex = 0 then
+          Tipo := 'F'
+         else
+         if cbxTipo.ItemIndex = 1 then
+            Tipo := 'J'
+         else
+            Tipo := EmptyStr;
+
+         Documento := edtDocumento.Text;
+         Telefone :=  edtTelefone.Text;
+      end;
+
+      if oClienteController.Inserir(oCliente, sErro) = False then
+        raise Exception.Create(sErro);
+
+   finally
+      FreeAndNil(oCliente);
+      FreeAndNil(oClienteController);
+   end;
+
+end;
+
+procedure TFrmCadastrarCliente.Listar;
+begin
+   pgcPrincipal.ActivePage := tbPesquisa;
+end;
+
+procedure TFrmCadastrarCliente.Novo;
+begin
+        FOperacao := opNovo;
+        pgcPrincipal.ActivePage := tbDados;
+        edtNome.SetFocus;
+end;
+
+procedure TFrmCadastrarCliente.Pesquisar;
+var
+   oClienteController: TClienteController;
+begin
+   oClienteController.Create;
+   try
+      oClienteController.Pesquisar(edtPesquisar.Text);
+   finally
+      FreeAndNil(oClienteController);
+   end;
+end;
+
+end.

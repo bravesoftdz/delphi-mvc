@@ -1,0 +1,38 @@
+unit Cliente.controller;
+
+interface
+
+uses
+ Cliente.model, Cliente.dao;
+
+type
+   TClienteController = class
+     public
+        function Inserir(oCliente: TCliente; var sErro: string): Boolean;
+        function Alterar(oCliente: TCliente; var sErro: string): Boolean;
+        function Excluir(iCodigo: Integer; var sErro: String): Boolean;
+   end;
+
+implementation
+
+{ TClienteController }
+
+function TClienteController.Alterar(oCliente: TCliente;
+  var sErro: string): Boolean;
+begin
+  Result := DmCliente.Alterar(oCliente, sErro);
+end;
+
+function TClienteController.Excluir(iCodigo: Integer;
+  var sErro: String): Boolean;
+begin
+   Result := DmCliente.Excluir(iCodigo, sErro);
+end;
+
+function TClienteController.Inserir(oCliente: TCliente;
+  var sErro: string): Boolean;
+begin
+   Result := DmCliente.Inserir(oCliente, sErro);
+end;
+
+end.
